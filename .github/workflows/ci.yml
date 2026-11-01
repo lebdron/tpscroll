@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: swift --version
+
+      - name: Build TPScroll (Swift 6 language mode, strict concurrency)
+        run: ./build.sh tpscroll
+
+      - name: Build tprec
+        run: ./build.sh tprec
+
+      - name: Lint Swift
+        run: xcrun swift-format lint --strict --configuration .swift-format Sources/tpscroll.swift tools/tprec/tprec.swift
+
+      - name: Lint shell scripts
+        run: |
+          command -v shellcheck >/dev/null || brew install shellcheck
+          shellcheck build.sh install.sh uninstall.sh
