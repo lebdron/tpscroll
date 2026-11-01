@@ -19,7 +19,7 @@
 //
 // Settings (defaults domain io.github.lebdron.tpscroll), re-read every few seconds:
 //   pixelsPerStep (float 1…500, 20) · direction (system|natural|traditional) · invertHorizontal (bool)
-//   swallowF7 (bool, true) · fnLock (int 0/1, 1) · sensitivity (int 1…255, 5) — applied on (re)connect
+//   swallowF7 (bool, true) · fnLock (int 0/1, 1; Fn+Esc toggles it at runtime) · sensitivity (int 1…255, 5)
 //   debugKeys (bool) — logs F7 detection
 import Foundation
 import IOKit
@@ -77,6 +77,10 @@ struct Settings: Equatable {
     }
 }
 var settings = Settings.load()
+/// The keyboard's current Fn-lock state. Starts from the setting; follows Fn+Esc (which the keyboard toggles by
+/// itself) so that re-sending the configuration on reconnect/wake keeps the user's choice — like hid-lenovo's cached
+/// fn_lock.
+var fnLockState = settings.fnLock
 
 // MARK: - state shared with the tap thread
 
@@ -173,7 +177,7 @@ var keyboards: [Keyboard] = []
 @MainActor func configure(_ k: Keyboard, reason: String) {
     guard k.isCommandTarget else { return }
     log(
-        "configuring keyboard [\(k.name)] (\(reason)): native middle, fnLock=\(settings.fnLock), sensitivity=\(settings.sensitivity)"
+        "configuring keyboard [\(k.name)] (\(reason)): native middle, fnLock=\(fnLockState), sensitivity=\(settings.sensitivity)"
     )
     k.nativeConfirmed = false
     resetMiddle(k)
@@ -181,7 +185,7 @@ var keyboards: [Keyboard] = []
     publish()
     // Lenovo's Windows tool waits 50 ms after each command. Chain them: a BLE write can block for ~100 ms, so fixed
     // offsets would bunch the later commands up right after it.
-    sendChain(k, [(0x09, 0x01), (0x05, UInt8(settings.fnLock)), (0x02, UInt8(settings.sensitivity))])
+    sendChain(k, [(0x09, 0x01), (0x05, UInt8(fnLockState)), (0x02, UInt8(settings.sensitivity))])
 }
 @MainActor func sendChain(_ k: Keyboard, _ cmds: [(UInt8, UInt8)]) {
     guard let c = cmds.first, keyboards.contains(where: { $0 === k }) else { return }
@@ -309,7 +313,15 @@ func s8(_ b: UInt8) -> Int { Int(Int8(bitPattern: b)) }
         postScroll(h: h, v: v)
     case 0x05 where len >= 2:  // vendor hotkey (one code; 00 on release)
         let code = p[1]
-        if code == 0xbb && code != k.lastHotkey { DispatchQueue.global(qos: .userInitiated).async { toggleMicMute() } }
+        if code != k.lastHotkey {
+            switch code {
+            case 0xbb: DispatchQueue.global(qos: .userInitiated).async { toggleMicMute() }
+            case 0xb5:  // Fn+Esc: the keyboard already flipped Fn-lock; remember it
+                fnLockState ^= 1
+                log("Fn+Esc: Fn-lock now \(fnLockState == 1 ? "on (F1–F12, hotkeys on Fn)" : "off (hotkeys)")")
+            default: break
+            }
+        }
         k.lastHotkey = code
     case 0x02 where !k.usb && len >= 2, 0x01 where k.usb && len >= 2:  // standard mouse report
         // Button 3 only appears in compatibility mode: the keyboard lost native mode (e.g. its own power cycle)
@@ -596,10 +608,19 @@ Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { _ in
         let s = Settings.load()
         guard s != settings else { return }
         log(
-            "settings changed: px=\(s.px) direction=\(s.direction) natural=\(s.natural) invertH=\(s.invertH) swallowF7=\(s.swallowF7)"
+            "settings changed: px=\(s.px) direction=\(s.direction) natural=\(s.natural) invertH=\(s.invertH) swallowF7=\(s.swallowF7) fnLock=\(s.fnLock) sensitivity=\(s.sensitivity)"
         )
+        let old = settings
         settings = s
         publish()
+        // like hid-lenovo's sysfs attributes: send keyboard settings right away instead of on the next connect
+        var cmds: [(UInt8, UInt8)] = []
+        if s.fnLock != old.fnLock {
+            fnLockState = s.fnLock
+            cmds.append((0x05, UInt8(fnLockState)))
+        }
+        if s.sensitivity != old.sensitivity { cmds.append((0x02, UInt8(s.sensitivity))) }
+        if !cmds.isEmpty { for k in keyboards where k.isCommandTarget { sendChain(k, cmds) } }
         if tapNeedsKeys(s) != tapHasKeys {
             tapHasKeys = tapNeedsKeys(s)
             let keys = tapHasKeys

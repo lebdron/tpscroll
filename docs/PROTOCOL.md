@@ -44,9 +44,9 @@ The keyboard forgets these settings when it is power-cycled.
 
 | Report | Contents |
 |---|---|
-| `0x15` | middle button: byte 2 bit `0x04` (Bluetooth: 9 bytes, USB: 3 bytes). The descriptor declares vendor usages `0xF1–0xFC` as bits, and `0xFB` is middle. |
+| `0x15` | middle button: byte 2 bit `0x04` (Bluetooth: 9 bytes, USB: 3 bytes). Over USB the descriptor matches: vendor usages `0xF1–0xFC` as bits, with `0xFB` = middle. Over Bluetooth it declares an 8-byte array instead, so read the raw bytes. |
 | `0x16` | `[h, v]` signed bytes, ±1 (sometimes ±2) about every 15 ms while scrolling. `v > 0` = up, `h > 0` = right. |
-| `0x05` | hotkey code (Bluetooth `05 code 00`, USB `05 code`), with `00` on release |
+| `0x05` | hotkey code (Bluetooth `05 code 00`, USB `05 code`), with `00` on release. Over Bluetooth the descriptor wrongly declares this report as 13 bits (usages `0xF1–0xFC`) even though it carries a code byte; Linux patches the descriptor (`lenovo_report_fixup`). |
 
 Hotkey codes, with Fn-lock on, sent while Fn is held:
 
@@ -55,7 +55,7 @@ Hotkey codes, with Fn-lock on, sent while Fn is held:
 | F4 mic mute | `bb` | | F11 keyboard settings | `b7` |
 | F8 notification centre | `c1` | | F12 ★ | `b8` |
 | F9 control panel | `bc` | | Fn+PrtSc snipping tool | `b9` |
-| F10 Bluetooth | `b6` | | Fn+Esc fn-lock toggle | `b5` (the keyboard toggles fn-lock itself) |
+| F10 Bluetooth | `b6` | | Fn+Esc fn-lock toggle | `b5` (the keyboard toggles fn-lock itself; a driver should track it so re-sending `05` keeps the user's choice, as Linux does) |
 
 F1–F3 are standard consumer keys (mute, volume down, volume up) and F5–F6 send brightness down/up (consumer `0x70`,
 `0x6F`), all handled by macOS. **F7 sends Win+P** as normal keyboard input: Win down, Win+P, Win, all within 1 ms.

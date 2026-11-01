@@ -21,7 +21,8 @@ from user space.
 - **Fn+F4 mic mute** toggles the mute of the default input device.
 - **Fn+F7** (*Win+P*, which macOS sees as ⌘P/⌥P and which would open Print or similar) is swallowed.
 - **Re-applies settings** on reconnect, wake, and if the keyboard ever drops back to its default mode.
-- **Fn-lock and sensitivity** are set the same way the Linux driver sets them.
+- **Fn-lock and sensitivity** are set the same way the Linux driver sets them, and Fn+Esc toggles survive
+  reconnects and sleep.
 - **Stays out of the way**: the event tap runs on its own thread and does only a few lookups per event. Keystrokes
   pass through it only while Fn+F7 swallowing is on (`swallowF7`, the default).
 
@@ -71,7 +72,9 @@ defaults write io.github.lebdron.tpscroll fnLock -int 0                # 1 (defa
 defaults write io.github.lebdron.tpscroll sensitivity -int 5           # TrackPoint sensitivity (default 5)
 ```
 
-`fnLock` and `sensitivity` take effect the next time the keyboard connects. `direction system` follows the macOS
+`fnLock` and `sensitivity` are sent to the keyboard as soon as they change. Fn+Esc still toggles Fn-lock, and
+tpscroll keeps track of the toggle, so reconnecting or waking from sleep keeps your current choice. After a restart
+of tpscroll, the `fnLock` setting applies again. `direction system` follows the macOS
 *Natural scrolling* setting. Linux defaults to traditional scrolling.
 
 Log: `~/Library/Logs/tpscroll.log`.
