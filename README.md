@@ -105,6 +105,10 @@ diagnostic recorder used to find them. Build it with `./build.sh tprec`.
 - **Field 87 is undocumented** and a future macOS version could change it. tpscroll then falls back to a timing rule.
 - **Ad-hoc builds** need the permissions granted again after every rebuild (see above).
 - **Other hotkeys** (Fn+F8–F12, Fn+PrtSc) are ignored, as they are on a stock Linux desktop.
+- **Fn+F7 pauses the keyboard for about 1.1 s.** The keyboard plays this hotkey as a Win+P macro and holds Win
+  until the macro ends, sending no other keys meanwhile. Keys typed during that second are lost inside the keyboard,
+  before they reach the Mac, so no software can recover them; Linux loses them the same way. tpscroll only swallows
+  the P. With Fn-lock on (the default), plain F7 is an ordinary key, so this only happens when you press Fn+F7.
 
 ## Related projects
 

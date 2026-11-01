@@ -58,7 +58,12 @@ Hotkey codes, with Fn-lock on, sent while Fn is held:
 | F10 Bluetooth | `b6` | | Fn+Esc fn-lock toggle | `b5` (the keyboard toggles fn-lock itself) |
 
 F1–F3 are standard consumer keys (mute, volume down, volume up) and F5–F6 send brightness down/up (consumer `0x70`,
-`0x6F`), all handled by macOS. **F7 sends Win+P** as normal keyboard input (modifier and key together, within 1 ms).
+`0x6F`), all handled by macOS. **F7 sends Win+P** as normal keyboard input: Win down, Win+P, Win, all within 1 ms.
+The keyboard then **holds Win for about 1.1 s and sends no other key reports during that time**. Keys pressed and
+released in that window are lost inside the keyboard; typing resumes about 16 ms after Win is released. This
+happened in every Bluetooth recording (the USB receiver was not measured). Sending command `01` with `0a` (what
+Lenovo's Windows tool sends at startup) or `03` (the Compact keyboard's "F7/F9/F11 as regular keys") changed
+nothing on Keyboard II.
 
 **Over Bluetooth the keyboard keeps sending the standard vertical wheel on report `0x02` in native mode**, with
 Button 3 no longer set. macOS keeps scrolling from it unless something filters it out. The USB receiver sends no
