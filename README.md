@@ -135,7 +135,7 @@ xcrun swift-format lint --strict --configuration .swift-format Sources/tpscroll.
 shellcheck build.sh install.sh uninstall.sh
 ```
 
-CI runs the same steps on every push. The agent's threading model is checked by the compiler. HID, power, timer
+CI runs the same steps whenever code, scripts or the workflow change (docs-only commits are skipped). The agent's threading model is checked by the compiler. HID, power, timer
 and signal callbacks run on the main actor, and each callback asserts this with `MainActor.assumeIsolated`. The
 event tap runs on its own thread and only reads a lock-protected snapshot. The only shared mutable state is a few
 `nonisolated(unsafe)` variables that only the tap thread ever touches.

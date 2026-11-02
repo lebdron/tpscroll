@@ -2,7 +2,25 @@ name: CI
 
 on:
   push:
+    branches: [main]
+    paths:
+      - "Sources/**"
+      - "tools/**"
+      - "*.sh"
+      - ".swift-format"
+      - ".github/workflows/**"
   pull_request:
+    paths:
+      - "Sources/**"
+      - "tools/**"
+      - "*.sh"
+      - ".swift-format"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
