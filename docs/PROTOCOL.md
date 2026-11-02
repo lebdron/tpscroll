@@ -69,6 +69,23 @@ nothing on Keyboard II.
 Button 3 no longer set. macOS keeps scrolling from it unless something filters it out. The USB receiver sends no
 such duplicate.
 
+## Android mode (the Windows/Android switch)
+
+The slider on the back changes only how the F-row behaves. Recorded over Bluetooth:
+
+- **Same as Windows mode**: the report descriptor (the keyboard does not reconnect when switched), all
+  three TrackPoint buttons (right-click is a normal button 2, despite the manual's "no function"), native mode with
+  report `0x15` and two-axis `0x16` (plus the extra Bluetooth wheel), and the Win key.
+- **F1–F3, F5, F6**: same consumer keys as in Windows mode.
+- **F9 / F10 / F11**: consumer AC Back / AC Home / AC Search (`0x224`, `0x223`, `0x221`).
+- **F12**: an Alt+Tab macro that holds Alt for about 1.5 s.
+- **F4, F7, F8, Fn+Esc, Fn+PrtSc**: nothing, and no vendor `0x05` reports at all. F7 does not run the Win+P macro,
+  so there is no typing pause.
+- **No real F1–F12 at all**, with or without Fn, and Fn-lock does nothing (its LED stays off).
+
+So Android mode avoids the Fn+F7 pause but loses F1–F12, Fn-lock and the mic-mute hotkey. Windows mode is the useful
+one on macOS.
+
 ## Telling devices apart in event taps
 
 `CGEventGetIntegerValueField(event, 87)` holds the registry entry ID of the `IOHIDEventService` that produced the

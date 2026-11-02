@@ -112,6 +112,8 @@ diagnostic recorder used to find them. Build it with `./build.sh tprec`.
   until the macro ends, sending no other keys meanwhile. Keys typed during that second are lost inside the keyboard,
   before they reach the Mac, so no software can recover them; Linux loses them the same way. tpscroll only swallows
   the P. With Fn-lock on (the default), plain F7 is an ordinary key, so this only happens when you press Fn+F7.
+- **Keep the keyboard's OS switch on Windows.** Android mode has no F1–F12 and no Fn-lock or mic-mute key; see
+  [docs/PROTOCOL.md](docs/PROTOCOL.md#android-mode-the-windowsandroid-switch).
 
 ## Related projects
 
